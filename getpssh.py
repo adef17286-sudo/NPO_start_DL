@@ -117,7 +117,7 @@ def main():
         sys.exit(1)
 
     link = sys.argv[1]
-    provision_path = "motorola_moto.wvd"
+    provision_path = "cdm.wvd"
     if not Path(provision_path).is_file():
         print(f"[!] Provisioning file '{provision_path}' not found.")
         sys.exit(1)
@@ -184,3 +184,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

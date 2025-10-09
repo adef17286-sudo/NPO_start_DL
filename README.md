@@ -16,3 +16,13 @@ https://www.bento4.com/documentation/mp4decrypt/
 https://www.bento4.com/downloads/
 ffmpeg
 https://ffmpeg.org/
+
+Hoe te gebruiken?
+
+py ./DL.py npostarturl
+bijv
+py ./DL.py https://npo.nl/start/serie/nos-journaal/seizoen-25_11/nos-journaal_101193/afspelen
+
+(moet wel eerst op video klikken anders dan weet hij te weinig)
+
+https://npo.nl/start/serie/nos-journaal/afspelen zou niet kunnen

@@ -2,14 +2,44 @@ import requests
 import re
 import json
 import argparse
+import os
+
+def load_cookies(cookie_file):
+    """Load cookies from a Netscape format cookie file and return a Cookie header string."""
+    cookie_header = []
+    try:
+        with open(cookie_file, 'r') as f:
+            for line in f:
+                if line.startswith('#') or not line.strip():
+                    continue  # Skip comments and empty lines
+                parts = line.strip().split('\t')
+                if len(parts) >= 7:
+                    domain = parts[0]
+                    # Ensure the domain is valid before creating the cookie string
+                    if domain.startswith('.'):
+                        domain = domain[1:]  # Remove leading dot for correct formatting
+                    
+                    # Collecting the cookie name and value
+                    cookie_name = parts[5]
+                    cookie_value = parts[6]
+                    cookie_header.append(f"{cookie_name}={cookie_value}")
+    except Exception as e:
+        print(f"Error loading cookies: {str(e)}")
+    return '; '.join(cookie_header)
 
 def get_stream_url(url):
     if url.startswith("https://npo.nl/start/serie/") and url.endswith("/afspelen"):
         try:
-            # Step 1: Get the JSON data
-            response = requests.get(url)
+            # Load cookies from cookies.txt if it exists
+            cookie_file = 'cookies.txt'
+            cookie_header = load_cookies(cookie_file) if os.path.exists(cookie_file) else None
+
+            # Step 1: Make a request to the input URL
+            headers = {'Cookie': cookie_header} if cookie_header else {}
+            response = requests.get(url, headers=headers)
             response.raise_for_status()
 
+            # Extract the JSON data embedded in the HTML
             match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', response.text, re.DOTALL)
             if match:
                 json_data = match.group(1)
@@ -18,7 +48,6 @@ def get_stream_url(url):
                 product_info = None
                 for item in data.get('props', {}).get('pageProps', {}).get('dehydratedState', {}).get('queries', []):
                     for episode_data in item.get('state', {}).get('data', []):
-                        # Debug output to understand structure
                         if isinstance(episode_data, dict) and episode_data.get('slug') == url.split('/')[-2]:
                             product_info = {
                                 'productId': episode_data.get('productId'),
@@ -29,20 +58,21 @@ def get_stream_url(url):
                         break
 
                 if product_info:
-                    # Step 2: Get JWT
+                    # Step 2: Get JWT using the same cookies
                     token_url = f"https://npo.nl/start/api/domain/player-token?productId={product_info['productId']}"
-                    token_response = requests.get(token_url)
+                    token_response = requests.get(token_url, headers=headers)
                     token_response.raise_for_status()
                     jwt = token_response.json().get('jwt')
 
                     if jwt:
                         # Step 3: Make POST request to get stream link
-                        headers = {
+                        post_headers = {
                             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
                             "Authorization": jwt,
                             "Content-Type": "application/json",
                             "Accept": "*/*",
-                            "Referer": "https://npo.nl/"
+                            "Referer": "https://npo.nl/",
+                            'Cookie': cookie_header
                         }
                         
                         body = {
@@ -56,7 +86,8 @@ def get_stream_url(url):
                             }
                         }
                         
-                        stream_response = requests.post("https://prod.npoplayer.nl/stream-link", headers=headers, json=body)
+                        # Send the POST request to get the stream link
+                        stream_response = requests.post("https://prod.npoplayer.nl/stream-link", headers=post_headers, json=body)
                         stream_response.raise_for_status()
                         
                         # Step 4: Extract streams URL and drmToken
@@ -69,7 +100,7 @@ def get_stream_url(url):
                 return "Product ID and GUID not found for the given slug."
             return "JSON script not found in the response."
         except requests.exceptions.RequestException as e:
-            return f"An error occurred: {str(e)}"
+            return f"An error occurred while making the request: {str(e)}"
         except json.JSONDecodeError:
             return "Failed to decode JSON data."
     return "Invalid URL. Please provide a URL that starts with 'https://npo.nl/start/serie/' and ends with '/afspelen'."

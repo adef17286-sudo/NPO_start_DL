@@ -4,7 +4,8 @@ DISCLAMER: ALLEEN BEDOELT VOOR EDUCATIEVE DOELEINDEN
 IK STEL MIJZELF NIET VERANDWOORDERLIJK VOOR WAT JIJ HIERMEE DOET
 DOWNLOAD ALLEEN ALS DAT OOK MAG
 
-getest op Windows 10 (werkt niet voor premium)
+getest op Windows 10 (werkt nu wel voor premium cookies in netscape formaat nodig)
+moet cookies.txt heten
 
 benodigheden
 1 widevine cdm (hernoem hem naar cdm.wvd en stop hem in dezelfde map)

@@ -15,11 +15,9 @@ def load_cookies(cookie_file):
                 parts = line.strip().split('\t')
                 if len(parts) >= 7:
                     domain = parts[0]
-                    # Ensure the domain is valid before creating the cookie string
                     if domain.startswith('.'):
-                        domain = domain[1:]  # Remove leading dot for correct formatting
+                        domain = domain[1:]  # Remove leading dot
                     
-                    # Collecting the cookie name and value
                     cookie_name = parts[5]
                     cookie_value = parts[6]
                     cookie_header.append(f"{cookie_name}={cookie_value}")
@@ -28,7 +26,8 @@ def load_cookies(cookie_file):
     return '; '.join(cookie_header)
 
 def get_stream_url(url):
-    if url.startswith("https://npo.nl/start/serie/") and url.endswith("/afspelen"):
+    # Validate the new URL structure
+    if url.startswith("https://npo.nl/start/afspelen/"):
         try:
             # Load cookies from cookies.txt if it exists
             cookie_file = 'cookies.txt'
@@ -46,16 +45,19 @@ def get_stream_url(url):
                 data = json.loads(json_data)
 
                 product_info = None
+                slug = url.split('/')[-1]
+
                 for item in data.get('props', {}).get('pageProps', {}).get('dehydratedState', {}).get('queries', []):
-                    for episode_data in item.get('state', {}).get('data', []):
-                        if isinstance(episode_data, dict) and episode_data.get('slug') == url.split('/')[-2]:
-                            product_info = {
-                                'productId': episode_data.get('productId'),
-                                'guid': episode_data.get('guid')
-                            }
-                            break
-                    if product_info:
-                        break
+                    state = item.get('state', {})
+                    if state:
+                        episode_data = state.get('data', {})
+                        if isinstance(episode_data, dict):
+                            if episode_data.get('slug') == slug:
+                                product_info = {
+                                    'productId': episode_data.get('productId'),
+                                    'guid': episode_data.get('guid')
+                                }
+                                break
 
                 if product_info:
                     # Step 2: Get JWT using the same cookies
@@ -103,7 +105,7 @@ def get_stream_url(url):
             return f"An error occurred while making the request: {str(e)}"
         except json.JSONDecodeError:
             return "Failed to decode JSON data."
-    return "Invalid URL. Please provide a URL that starts with 'https://npo.nl/start/serie/' and ends with '/afspelen'."
+    return "Invalid URL. Please provide a URL that starts with 'https://npo.nl/start/afspelen/'."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get the streaming URL from an NPO series page.")

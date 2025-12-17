@@ -15,12 +15,14 @@ from pywidevine.pssh import PSSH
 
 def run_npo_get_output(link):
     try:
-        p = subprocess.run([sys.executable, 'NPO.py', link],
+        script_dir = Path(sys.argv[0]).parent.resolve()
+        npo_path = script_dir / "NPO"
+        p = subprocess.run([str(npo_path), link],
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            text=True)
         return p.stdout or "", p.stderr or "", p.returncode
     except Exception as e:
-        print("[!] Failed to run NPO.py:", e)
+        print("[!] Failed to run NPO:", e)
         return "", str(e), 1
 
 
@@ -163,12 +165,18 @@ def main():
             sys.exit(1)
         all_keypairs.extend(keys)
 
+    script_dir = Path(sys.argv[0]).parent.resolve()
+    n_m3u8dl_re_path = script_dir / "N_m3u8DL-RE"
+    mp4decrypt_path = script_dir / "mp4decrypt"
+
     # Build command for N_m3u8dl-re
-    cmd = ["N_m3u8dl-re", mpd_url]
+    cmd = [str(n_m3u8dl_re_path), mpd_url]
     for keypair in all_keypairs:
         cmd += ["--key", keypair]
 
     # Append fixed options
+    cmd += ["--decryption-engine", "MP4DECRYPT"]
+    cmd += ["--decryption-binary-path", str(mp4decrypt_path)]
     cmd += ["-sv", "best", "-sa", "best", "-M", "mkv"]
 
     print("\n[+] Running command:")

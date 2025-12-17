@@ -16,8 +16,8 @@ from pywidevine.pssh import PSSH
 def run_npo_get_output(link):
     try:
         script_dir = Path(sys.argv[0]).parent.resolve()
-        npo_path = script_dir / "NPO"
-        p = subprocess.run([str(npo_path), link],
+        npo_path = script_dir / "NPO.py"
+        p = subprocess.run([sys.executable, str(npo_path), link],
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            text=True)
         return p.stdout or "", p.stderr or "", p.returncode

@@ -166,8 +166,12 @@ def main():
         all_keypairs.extend(keys)
 
     script_dir = Path(sys.argv[0]).parent.resolve()
-    n_m3u8dl_re_path = script_dir / "N_m3u8DL-RE"
-    mp4decrypt_path = script_dir / "mp4decrypt"
+    if sys.platform == "win32":
+        n_m3u8dl_re_path = script_dir / "N_m3u8DL-RE.exe"
+        mp4decrypt_path = script_dir / "mp4decrypt.exe"
+    else:
+        n_m3u8dl_re_path = script_dir / "N_m3u8DL-RE"
+        mp4decrypt_path = script_dir / "mp4decrypt"
 
     # Build command for N_m3u8dl-re
     cmd = [str(n_m3u8dl_re_path), mpd_url]
